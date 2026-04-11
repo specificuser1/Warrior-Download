@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <header>
+    <h1>⚔️ Warrior Download</h1>
+  </header>
+
+  <section class="hero animate">
+    <h2>Premium Tools. Zero Limits.</h2>
+    <p>Yahan aapko high-quality, tested aur secure tools milenge. Direct download, no ads, no hassle.</p>
+  </section>
+
+  <div class="container">
+    <div class="tools-grid">
+      <% tools.forEach((tool, i) => { %>
+        <div class="tool-card animate" style="--delay: <%= i * 0.15 %>s">
+          <h3><%= tool.name %></h3>
+          <p><%= tool.desc %></p>
+          <a href="<%= tool.link %>" target="_blank" class="btn">⬇️ Download</a>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <footer>
+    <div class="social-icons">
+      <% socials.forEach(s => { %>
+        <a href="<%= s.link %>" target="_blank" title="<%= s.platform %>">
+          <i class="fab fa-<%= s.platform %>"></i>
+        </a>
+      <% }) %>
+    </div>
+    <p class="credit">Developed by <strong>SUBHAN</strong> | © 2026 Warrior Download</p>
+  </footer>
+</body>
+</html>
