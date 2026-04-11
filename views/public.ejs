@@ -9,19 +9,18 @@
 </head>
 <body>
   <header>
-  <div class="container header-inner">
-    <a href="/" class="logo">
-      <% if (logo) { %><img src="<%= logo %>" alt="Logo"><% } %>
-      <span><%= site_title %></span>
-    </a>
-    <!-- Admin Access button intentionally removed as requested -->
-  </div>
-</header>
+    <div class="container header-inner">
+      <a href="/" class="logo">
+        <% if (logo) { %><img src="<%= logo %>" alt="Logo"><% } %>
+        <span><%= site_title %></span>
+      </a>
+    </div>
+  </header>
 
   <main class="container">
     <section class="hero">
-      <h1>Premium Tools.</h1>
-      <p class="text-muted">Safe, Trusted, And Secure.</p>
+      <h1>Advanced Tools. Direct Access.</h1>
+      <p class="text-muted">Curated, tested, and secure downloads. No redirects. No ads.</p>
       <div class="search-box">
         <i class="fa-solid fa-magnifying-glass search-icon"></i>
         <input type="text" id="searchInput" class="input" placeholder="Search tools...">
@@ -36,7 +35,9 @@
             <h3 class="card-title"><%= tool.name %></h3>
             <p class="card-desc"><%= tool.desc %></p>
             <div class="card-actions">
-              <a href="<%= tool.link %>" target="_blank" class="btn" style="flex:1;">Download</a>
+              <button class="btn download-btn" style="flex:1;" data-link="<%= tool.link %>" data-status="<%= tool.status %>">
+                <%= tool.status === 'updating' ? 'Updating...' : 'Download' %>
+              </button>
             </div>
           </div>
         </div>
@@ -52,20 +53,41 @@
         <% }) %>
       </div>
       <p class="copyright"><%= footer_text %></p>
-      <p class="copyright">PROGRAMMED BY SUBHAN | &copy; 2018-26 <%= site_title %></p>
+      <p class="copyright">Developed by SUBHAN | &copy; 2026 <%= site_title %></p>
     </div>
   </footer>
 
+  <!-- Update Modal -->
+  <div id="updateModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Tool is Under Updating...</h3>
+      <p>This tool is currently being updated. Please check back later or visit our Discord for ETA.</p>
+      <button class="btn" onclick="closeModal()">Understood</button>
+    </div>
+  </div>
+
   <script>
-    const input = document.getElementById('searchInput');
-    const cards = document.querySelectorAll('.tool-card');
-    input.addEventListener('input', e => {
-      const query = e.target.value.toLowerCase();
-      cards.forEach(card => {
-        const name = card.dataset.name;
-        card.style.display = name.includes(query) ? 'flex' : 'none';
+    // Search
+    document.getElementById('searchInput').addEventListener('input', e => {
+      const q = e.target.value.toLowerCase();
+      document.querySelectorAll('.tool-card').forEach(c => c.style.display = c.dataset.name.includes(q) ? 'flex' : 'none');
+    });
+
+    // Download / Modal Logic
+    document.querySelectorAll('.download-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const status = this.dataset.status;
+        if (status === 'updating') {
+          document.getElementById('updateModal').classList.remove('hidden');
+        } else {
+          window.open(this.dataset.link, '_blank');
+        }
       });
     });
+
+    function closeModal() {
+      document.getElementById('updateModal').classList.add('hidden');
+    }
   </script>
 </body>
 </html>
