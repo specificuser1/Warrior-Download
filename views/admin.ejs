@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header style="display:flex; justify-content:space-between; align-items:center;">
+    <h1>🛡️ Admin Panel</h1>
+    <a href="/logout" class="btn" style="background:#333;">Logout</a>
+  </header>
+
+  <div class="container animate">
+    <% if (locals.error) { %><p class="error"><%= error %></p><% } %>
+
+    <!-- Add Tool -->
+    <div class="admin-section">
+      <h3>➕ Add New Tool</h3>
+      <form method="POST" action="/admin/add-tool">
+        <input type="text" name="name" placeholder="Tool Name" required>
+        <input type="text" name="desc" placeholder="Short Description" required>
+        <input type="url" name="link" placeholder="Download Link" required>
+        <input type="url" name="img" placeholder="Thumbnail URL (Optional)">
+        <button class="btn" type="submit">Add Tool</button>
+      </form>
+    </div>
+
+    <!-- Tools List -->
+    <div class="admin-section">
+      <h3>📦 Manage Tools</h3>
+      <div class="tool-list">
+        <% tools.forEach(t => { %>
+          <div class="tool-item">
+            <span><%= t.name %> - <%= t.link %></span>
+            <form method="POST" action="/admin/delete-tool" style="margin:0;">
+              <input type="hidden" name="id" value="<%= t.id %>">
+              <button class="btn" style="background:#ff4d4d; padding:0.4rem 0.8rem;">🗑️</button>
+            </form>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- Social Links -->
+    <div class="admin-section">
+      <h3>🔗 Footer Social Links</h3>
+      <form method="POST" action="/admin/update-social">
+        <% socials.forEach(s => { %>
+          <input type="url" name="<%= s.platform %>" value="<%= s.link %>" placeholder="<%= s.platform %> link" style="margin-bottom:0.5rem;">
+        <% }) %>
+        <button class="btn" type="submit">Update Socials</button>
+      </form>
+    </div>
+
+    <!-- Change Password -->
+    <div class="admin-section">
+      <h3>🔑 Change Password</h3>
+      <form method="POST" action="/admin/change-password">
+        <input type="password" name="oldPass" placeholder="Current Password" required>
+        <input type="password" name="newPass" placeholder="New Password" required>
+        <button class="btn" type="submit">Update Password</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
