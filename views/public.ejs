@@ -9,14 +9,14 @@
 </head>
 <body>
   <header>
-    <div class="container header-inner">
-      <a href="/" class="logo">
-        <% if (logo) { %><img src="<%= logo %>" alt="Logo"><% } %>
-        <span><%= site_title %></span>
-      </a>
-      <a href="/admin/login" class="nav-link">Admin Access</a>
-    </div>
-  </header>
+  <div class="container header-inner">
+    <a href="/" class="logo">
+      <% if (logo) { %><img src="<%= logo %>" alt="Logo"><% } %>
+      <span><%= site_title %></span>
+    </a>
+    <!-- Admin Access button intentionally removed as requested -->
+  </div>
+</header>
 
   <main class="container">
     <section class="hero">
