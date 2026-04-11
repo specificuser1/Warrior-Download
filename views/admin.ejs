@@ -16,9 +16,6 @@
   </header>
 
   <main class="container admin-container">
-    <% if (locals.error) { %><div class="alert"><%= error %></div><% } %>
-
-    <!-- Settings -->
     <div class="section">
       <h2 class="section-title">Website Settings</h2>
       <form method="POST" action="/admin/settings" enctype="multipart/form-data" class="form-grid">
@@ -33,52 +30,45 @@
       </form>
     </div>
 
-    <!-- Add/Edit Tool -->
     <div class="section">
-      <h2 class="section-title"><%= editing ? 'Edit Tool' : 'Add New Tool' %></h2>
-      <form method="POST" action="/admin/tool" enctype="multipart/form-data">
-        <input type="hidden" name="id" value="<%= editing ? editing.id : '' %>">
+      <h2 class="section-title" id="formTitle">Add New Tool</h2>
+      <form id="toolForm">
+        <input type="hidden" name="id" id="toolId">
+        <input type="hidden" name="currentThumb" id="currentThumb">
         <div class="form-grid">
-          <input name="name" class="input" placeholder="Tool Name" value="<%= editing ? editing.name : '' %>" required>
-          <input name="desc" class="input" placeholder="Short Description" value="<%= editing ? editing.desc : '' %>" required>
-          <input name="link" class="input" placeholder="Download URL" value="<%= editing ? editing.link : '' %>" required>
+          <input name="name" id="name" class="input" placeholder="Tool Name" required>
+          <input name="desc" id="desc" class="input" placeholder="Short Description" required>
+          <input name="link" id="link" class="input" placeholder="Download URL" required>
+          <select name="status" id="status" class="input" required>
+            <option value="stable">Stable (Direct Download)</option>
+            <option value="updating">Updating (Show Popup)</option>
+          </select>
         </div>
         <div class="form-grid">
           <div>
             <div class="toggle-group">
-              <button type="button" class="toggle-btn active" onclick="toggleThumb('url')">URL</button>
-              <button type="button" class="toggle-btn" onclick="toggleThumb('file')">Upload File</button>            </div>
-            <input name="thumbUrl" id="thumbUrl" class="input" placeholder="https://example.com/image.jpg" value="<%= editing ? editing.thumb : '' %>" style="display:<%= editing && !editing.thumb.startsWith('/uploads/') ? 'block' : 'block' %>">
+              <button type="button" class="toggle-btn active" onclick="toggleThumb('url')">URL</button>              <button type="button" class="toggle-btn" onclick="toggleThumb('file')">Upload File</button>
+            </div>
+            <input name="thumbUrl" id="thumbUrl" class="input" placeholder="https://example.com/image.jpg">
             <input name="thumbFile" id="thumbFile" type="file" accept="image/*" class="input hidden">
           </div>
-          <div style="display:flex; align-items:end;"><button class="btn" type="submit"><%= editing ? 'Update Tool' : 'Add Tool' %></button></div>
+          <div style="display:flex; align-items:end; gap:0.5rem;">
+            <button type="submit" class="btn" id="submitBtn">Add Tool</button>
+            <button type="button" class="btn btn-outline hidden" id="cancelBtn" onclick="resetForm()">Cancel</button>
+          </div>
+        </div>
+        <div class="progress-container hidden" id="progressContainer">
+          <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+          <span id="progressText" style="font-size:0.85rem; color:var(--text-muted);">Uploading: 0%</span>
         </div>
       </form>
     </div>
 
-    <!-- Tools List -->
     <div class="section">
       <h2 class="section-title">Manage Tools</h2>
-      <div class="tool-list">
-        <% tools.forEach(t => { %>
-          <div class="tool-row">
-            <div class="tool-info">
-              <strong><%= t.name %></strong>
-              <div class="text-muted"><%= t.link %></div>
-            </div>
-            <div class="tool-actions">
-              <a href="/admin?edit=<%= t.id %>" class="btn btn-sm btn-outline">Edit</a>
-              <form method="POST" action="/admin/tool/delete" style="margin:0;">
-                <input type="hidden" name="id" value="<%= t.id %>">
-                <button class="btn btn-sm" style="background:#ef4444;">Delete</button>
-              </form>
-            </div>
-          </div>
-        <% }) %>
-      </div>
+      <div id="toolsList" class="tool-list"></div>
     </div>
 
-    <!-- Social Links -->
     <div class="section">
       <h2 class="section-title">Footer Social Links</h2>
       <form method="POST" action="/admin/socials" class="form-grid">
@@ -90,48 +80,134 @@
       </form>
     </div>
 
-    <!-- Password -->
     <div class="section">
       <h2 class="section-title">Security</h2>
       <form method="POST" action="/admin/password" class="form-grid">
         <input name="oldPass" class="input" type="password" placeholder="Current Password" required>
         <input name="newPass" class="input" type="password" placeholder="New Password" required>
-        <div style="display:flex; align-items:end;"><button class="btn btn-outline" type="submit">Update Password</button></div>      </form>
+        <div style="display:flex; align-items:end;"><button class="btn btn-outline" type="submit">Update Password</button></div>
+      </form>
     </div>
   </main>
 
+  <div id="toast" class="toast hidden"></div>
+
   <script>
+    let toolsData = [];
+    let editingId = null;
+
+    async function loadTools() {      const res = await fetch('/api/admin/tools');
+      toolsData = await res.json();
+      renderTools();
+    }
+
+    function renderTools() {
+      const list = document.getElementById('toolsList');
+      list.innerHTML = toolsData.map(t => `
+        <div class="tool-row">
+          <div class="tool-info">
+            <strong>${t.name}</strong>
+            <div class="text-muted">${t.link} | Status: <span style="color:${t.status==='updating'?'#f59e0b':'#10b981'}">${t.status.toUpperCase()}</span></div>
+          </div>
+          <div class="tool-actions">
+            <button class="btn btn-sm btn-outline" onclick="editTool(${t.id})">Edit</button>
+            <button class="btn btn-sm" style="background:#ef4444;" onclick="deleteTool(${t.id})">Delete</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function showToast(msg, type='success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.background = type==='success' ? '#10b981' : '#ef4444';
+      t.classList.remove('hidden');
+      setTimeout(() => t.classList.add('hidden'), 3000);
+    }
+
     function toggleThumb(mode) {
       document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
       event.target.classList.add('active');
-      const url = document.getElementById('thumbUrl');
-      const file = document.getElementById('thumbFile');
-      if (mode === 'url') { url.classList.remove('hidden'); file.classList.add('hidden'); }
-      else { url.classList.add('hidden'); file.classList.remove('hidden'); }
+      document.getElementById('thumbUrl').classList.toggle('hidden', mode!=='url');
+      document.getElementById('thumbFile').classList.toggle('hidden', mode!=='file');
     }
 
-    // Auto-fill edit mode
-    const urlParams = new URLSearchParams(window.location.search);
-    const editId = urlParams.get('edit');
-    if (editId) {
-      const tools = <%- JSON.stringify(tools) %>;
-      const tool = tools.find(t => t.id == editId);
-      if (tool) {
-        document.querySelector('input[name="name"]').value = tool.name;
-        document.querySelector('input[name="desc"]').value = tool.desc;
-        document.querySelector('input[name="link"]').value = tool.link;
-        document.querySelector('input[name="id"]').value = tool.id;
-        const btn = document.querySelector('button[type="submit"]');
-        btn.textContent = 'Update Tool';
-        if (tool.thumb.startsWith('/uploads/')) {
-          toggleThumb('file');
-          document.getElementById('thumbUrl').classList.add('hidden');
-          document.getElementById('thumbFile').classList.remove('hidden');
-        } else {
-          document.getElementById('thumbUrl').value = tool.thumb;
-        }
-      }
+    function editTool(id) {
+      const t = toolsData.find(x => x.id === id);
+      if (!t) return;
+      editingId = id;
+      document.getElementById('toolId').value = id;
+      document.getElementById('currentThumb').value = t.thumb;
+      document.getElementById('name').value = t.name;
+      document.getElementById('desc').value = t.desc;
+      document.getElementById('link').value = t.link;
+      document.getElementById('status').value = t.status;
+      document.getElementById('thumbUrl').value = t.thumb.startsWith('/uploads/') ? '' : t.thumb;
+      document.getElementById('formTitle').textContent = 'Edit Tool';
+      document.getElementById('submitBtn').textContent = 'Update Tool';
+      document.getElementById('cancelBtn').classList.remove('hidden');    }
+
+    function resetForm() {
+      document.getElementById('toolForm').reset();
+      editingId = null;
+      document.getElementById('toolId').value = '';
+      document.getElementById('currentThumb').value = '';
+      document.getElementById('formTitle').textContent = 'Add New Tool';
+      document.getElementById('submitBtn').textContent = 'Add Tool';
+      document.getElementById('cancelBtn').classList.add('hidden');
     }
+
+    async function deleteTool(id) {
+      if (!confirm('Delete this tool?')) return;
+      const res = await fetch('/api/admin/tools/delete', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id}) });
+      const data = await res.json();
+      if (data.success) { loadTools(); showToast('Tool deleted.'); }
+      else showToast(data.error, 'error');
+    }
+
+    document.getElementById('toolForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const prog = document.getElementById('progressContainer');
+      const bar = document.getElementById('progressBar');
+      const txt = document.getElementById('progressText');
+      
+      btn.disabled = true; prog.classList.remove('hidden'); bar.style.width = '0%'; txt.textContent = 'Uploading: 0%';
+
+      const formData = new FormData(this);
+      const isFile = document.getElementById('thumbFile').files.length > 0;
+      const endpoint = editingId ? '/api/admin/tools/edit' : '/api/admin/tools';
+
+      if (isFile) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', endpoint);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const p = Math.round((e.loaded / e.total) * 100);
+            bar.style.width = p + '%';
+            txt.textContent = `Uploading: ${p}%`;
+          }
+        };
+        xhr.onload = () => {
+          const res = JSON.parse(xhr.responseText);
+          if (res.success) { loadTools(); showToast(res.message); resetForm(); }
+          else showToast(res.error, 'error');
+          btn.disabled = false; prog.classList.add('hidden');
+        };
+        xhr.onerror = () => { showToast('Upload failed', 'error'); btn.disabled = false; prog.classList.add('hidden'); };        xhr.send(formData);
+      } else {
+        fetch(endpoint, { method:'POST', body: formData })
+          .then(r => r.json())
+          .then(res => {
+            if (res.success) { loadTools(); showToast(res.message); resetForm(); }
+            else showToast(res.error, 'error');
+          })
+          .catch(() => showToast('Network error', 'error'))
+          .finally(() => { btn.disabled = false; prog.classList.add('hidden'); });
+      }
+    });
+
+    loadTools();
   </script>
 </body>
 </html>
