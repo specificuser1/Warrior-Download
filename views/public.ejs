@@ -3,42 +3,69 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
+  <title><%= site_title %></title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="/css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </head>
 <body>
   <header>
-    <h1>⚔️ Warrior Download</h1>
+    <div class="container header-inner">
+      <a href="/" class="logo">
+        <% if (logo) { %><img src="<%= logo %>" alt="Logo"><% } %>
+        <span><%= site_title %></span>
+      </a>
+      <a href="/admin/login" class="nav-link">Admin Access</a>
+    </div>
   </header>
 
-  <section class="hero animate">
-    <h2>Premium Tools. Zero Limits.</h2>
-    <p>Yahan aapko high-quality, tested aur secure tools milenge. Direct download, no ads, no hassle.</p>
-  </section>
+  <main class="container">
+    <section class="hero">
+      <h1>Premium Tools.</h1>
+      <p class="text-muted">Safe, Trusted, And Secure.</p>
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="searchInput" class="input" placeholder="Search tools...">
+      </div>
+    </section>
 
-  <div class="container">
-    <div class="tools-grid">
-      <% tools.forEach((tool, i) => { %>
-        <div class="tool-card animate" style="--delay: <%= i * 0.15 %>s">
-          <h3><%= tool.name %></h3>
-          <p><%= tool.desc %></p>
-          <a href="<%= tool.link %>" target="_blank" class="btn">⬇️ Download</a>
+    <div class="tools-grid" id="toolsGrid">
+      <% tools.forEach(tool => { %>
+        <div class="tool-card" data-name="<%= tool.name.toLowerCase() %>">
+          <img src="<%= tool.thumb %>" alt="<%= tool.name %>" class="thumb" onerror="this.src='/placeholder.png'">
+          <div class="card-body">
+            <h3 class="card-title"><%= tool.name %></h3>
+            <p class="card-desc"><%= tool.desc %></p>
+            <div class="card-actions">
+              <a href="<%= tool.link %>" target="_blank" class="btn" style="flex:1;">Download</a>
+            </div>
+          </div>
         </div>
       <% }) %>
     </div>
-  </div>
+  </main>
 
   <footer>
-    <div class="social-icons">
-      <% socials.forEach(s => { %>
-        <a href="<%= s.link %>" target="_blank" title="<%= s.platform %>">
-          <i class="fab fa-<%= s.platform %>"></i>
-        </a>
-      <% }) %>
+    <div class="container footer-inner">
+      <div class="socials">
+        <% socials.forEach(s => { %>
+          <a href="<%= s.link %>" target="_blank"><i class="fa-brands fa-<%= s.platform %>"></i></a>
+        <% }) %>
+      </div>
+      <p class="copyright"><%= footer_text %></p>
+      <p class="copyright">PROGRAMMED BY SUBHAN | &copy; 2018-26 <%= site_title %></p>
     </div>
-    <p class="credit">Developed by <strong>SUBHAN</strong> | © 2026 Warrior Download</p>
   </footer>
+
+  <script>
+    const input = document.getElementById('searchInput');
+    const cards = document.querySelectorAll('.tool-card');
+    input.addEventListener('input', e => {
+      const query = e.target.value.toLowerCase();
+      cards.forEach(card => {
+        const name = card.dataset.name;
+        card.style.display = name.includes(query) ? 'flex' : 'none';
+      });
+    });
+  </script>
 </body>
 </html>
