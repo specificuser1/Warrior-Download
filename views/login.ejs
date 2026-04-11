@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Admin Login</title>
+  <title>Only For Developer</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <div class="auth-box animate">
-    <h2 style="color:var(--red); margin-bottom:1rem;">🔐 Admin Access</h2>
-    <% if (locals.error) { %><p class="error"><%= error %></p><% } %>
-    <form method="POST" action="/admin/login">
-      <input type="password" name="password" placeholder="Admin Password" required>
-      <button class="btn" type="submit">Login</button>
-    </form>
-    <p style="margin-top:1rem; text-align:center; color:#555;">Default: <code>admin123</code></p>
+  <div class="auth-wrapper">
+    <div class="auth-box">
+      <h2 style="margin-bottom:1.5rem;">Developer Access</h2>
+      <% if (locals.error) { %><div class="alert"><%= error %></div><% } %>
+      <form method="POST" action="/admin/login">
+        <input type="password" name="password" class="input" placeholder="Enter Secret" required style="margin-bottom:1rem;">
+        <button class="btn" type="submit" style="width:100%;">Authenticate</button>
+      </form>
+      <p class="text-muted" style="margin-top:1rem;">PROGRAMMED BY<code style="color:var(--primary);">SUBHAN</code></p>
+    </div>
   </div>
 </body>
 </html>
