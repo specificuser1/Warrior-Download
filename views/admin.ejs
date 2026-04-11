@@ -1,66 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Admin Dashboard</title>
+  <title>Dashboard | <%= site_title %></title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <header style="display:flex; justify-content:space-between; align-items:center;">
-    <h1>🛡️ Admin Panel</h1>
-    <a href="/logout" class="btn" style="background:#333;">Logout</a>
+  <header>
+    <div class="container header-inner">
+      <a href="/" class="logo"><%= site_title %></a>
+      <div style="display:flex; gap:0.75rem;">
+        <a href="/" class="btn btn-outline">View Site</a>
+        <a href="/logout" class="btn btn-sm">Logout</a>
+      </div>
+    </div>
   </header>
 
-  <div class="container animate">
-    <% if (locals.error) { %><p class="error"><%= error %></p><% } %>
+  <main class="container admin-container">
+    <% if (locals.error) { %><div class="alert"><%= error %></div><% } %>
 
-    <!-- Add Tool -->
-    <div class="admin-section">
-      <h3>➕ Add New Tool</h3>
-      <form method="POST" action="/admin/add-tool">
-        <input type="text" name="name" placeholder="Tool Name" required>
-        <input type="text" name="desc" placeholder="Short Description" required>
-        <input type="url" name="link" placeholder="Download Link" required>
-        <input type="url" name="img" placeholder="Thumbnail URL (Optional)">
-        <button class="btn" type="submit">Add Tool</button>
+    <!-- Settings -->
+    <div class="section">
+      <h2 class="section-title">Website Settings</h2>
+      <form method="POST" action="/admin/settings" enctype="multipart/form-data" class="form-grid">
+        <div><label class="text-muted">Site Title</label><input name="site_title" class="input" value="<%= settings.site_title %>" required></div>
+        <div><label class="text-muted">Footer Text</label><input name="footer_text" class="input" value="<%= settings.footer_text %>" required></div>
+        <div>
+          <label class="text-muted">Custom Logo</label>
+          <input type="file" name="logoFile" accept="image/*" class="input">
+          <% if (settings.logo) { %><p class="text-muted" style="margin-top:4px;">Current: <img src="<%= settings.logo %>" height="30"></p><% } %>
+        </div>
+        <div style="display:flex; align-items:end;"><button class="btn" type="submit">Update Settings</button></div>
+      </form>
+    </div>
+
+    <!-- Add/Edit Tool -->
+    <div class="section">
+      <h2 class="section-title"><%= editing ? 'Edit Tool' : 'Add New Tool' %></h2>
+      <form method="POST" action="/admin/tool" enctype="multipart/form-data">
+        <input type="hidden" name="id" value="<%= editing ? editing.id : '' %>">
+        <div class="form-grid">
+          <input name="name" class="input" placeholder="Tool Name" value="<%= editing ? editing.name : '' %>" required>
+          <input name="desc" class="input" placeholder="Short Description" value="<%= editing ? editing.desc : '' %>" required>
+          <input name="link" class="input" placeholder="Download URL" value="<%= editing ? editing.link : '' %>" required>
+        </div>
+        <div class="form-grid">
+          <div>
+            <div class="toggle-group">
+              <button type="button" class="toggle-btn active" onclick="toggleThumb('url')">URL</button>
+              <button type="button" class="toggle-btn" onclick="toggleThumb('file')">Upload File</button>            </div>
+            <input name="thumbUrl" id="thumbUrl" class="input" placeholder="https://example.com/image.jpg" value="<%= editing ? editing.thumb : '' %>" style="display:<%= editing && !editing.thumb.startsWith('/uploads/') ? 'block' : 'block' %>">
+            <input name="thumbFile" id="thumbFile" type="file" accept="image/*" class="input hidden">
+          </div>
+          <div style="display:flex; align-items:end;"><button class="btn" type="submit"><%= editing ? 'Update Tool' : 'Add Tool' %></button></div>
+        </div>
       </form>
     </div>
 
     <!-- Tools List -->
-    <div class="admin-section">
-      <h3>📦 Manage Tools</h3>
+    <div class="section">
+      <h2 class="section-title">Manage Tools</h2>
       <div class="tool-list">
         <% tools.forEach(t => { %>
-          <div class="tool-item">
-            <span><%= t.name %> - <%= t.link %></span>
-            <form method="POST" action="/admin/delete-tool" style="margin:0;">
-              <input type="hidden" name="id" value="<%= t.id %>">
-              <button class="btn" style="background:#ff4d4d; padding:0.4rem 0.8rem;">🗑️</button>
-            </form>
+          <div class="tool-row">
+            <div class="tool-info">
+              <strong><%= t.name %></strong>
+              <div class="text-muted"><%= t.link %></div>
+            </div>
+            <div class="tool-actions">
+              <a href="/admin?edit=<%= t.id %>" class="btn btn-sm btn-outline">Edit</a>
+              <form method="POST" action="/admin/tool/delete" style="margin:0;">
+                <input type="hidden" name="id" value="<%= t.id %>">
+                <button class="btn btn-sm" style="background:#ef4444;">Delete</button>
+              </form>
+            </div>
           </div>
         <% }) %>
       </div>
     </div>
 
     <!-- Social Links -->
-    <div class="admin-section">
-      <h3>🔗 Footer Social Links</h3>
-      <form method="POST" action="/admin/update-social">
+    <div class="section">
+      <h2 class="section-title">Footer Social Links</h2>
+      <form method="POST" action="/admin/socials" class="form-grid">
         <% socials.forEach(s => { %>
-          <input type="url" name="<%= s.platform %>" value="<%= s.link %>" placeholder="<%= s.platform %> link" style="margin-bottom:0.5rem;">
+          <div><label class="text-muted"><%= s.platform.charAt(0).toUpperCase() + s.platform.slice(1) %></label>
+          <input name="<%= s.platform %>" class="input" value="<%= s.link %>"></div>
         <% }) %>
-        <button class="btn" type="submit">Update Socials</button>
+        <div style="display:flex; align-items:end;"><button class="btn" type="submit">Save Links</button></div>
       </form>
     </div>
 
-    <!-- Change Password -->
-    <div class="admin-section">
-      <h3>🔑 Change Password</h3>
-      <form method="POST" action="/admin/change-password">
-        <input type="password" name="oldPass" placeholder="Current Password" required>
-        <input type="password" name="newPass" placeholder="New Password" required>
-        <button class="btn" type="submit">Update Password</button>
-      </form>
+    <!-- Password -->
+    <div class="section">
+      <h2 class="section-title">Security</h2>
+      <form method="POST" action="/admin/password" class="form-grid">
+        <input name="oldPass" class="input" type="password" placeholder="Current Password" required>
+        <input name="newPass" class="input" type="password" placeholder="New Password" required>
+        <div style="display:flex; align-items:end;"><button class="btn btn-outline" type="submit">Update Password</button></div>      </form>
     </div>
-  </div>
+  </main>
+
+  <script>
+    function toggleThumb(mode) {
+      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      const url = document.getElementById('thumbUrl');
+      const file = document.getElementById('thumbFile');
+      if (mode === 'url') { url.classList.remove('hidden'); file.classList.add('hidden'); }
+      else { url.classList.add('hidden'); file.classList.remove('hidden'); }
+    }
+
+    // Auto-fill edit mode
+    const urlParams = new URLSearchParams(window.location.search);
+    const editId = urlParams.get('edit');
+    if (editId) {
+      const tools = <%- JSON.stringify(tools) %>;
+      const tool = tools.find(t => t.id == editId);
+      if (tool) {
+        document.querySelector('input[name="name"]').value = tool.name;
+        document.querySelector('input[name="desc"]').value = tool.desc;
+        document.querySelector('input[name="link"]').value = tool.link;
+        document.querySelector('input[name="id"]').value = tool.id;
+        const btn = document.querySelector('button[type="submit"]');
+        btn.textContent = 'Update Tool';
+        if (tool.thumb.startsWith('/uploads/')) {
+          toggleThumb('file');
+          document.getElementById('thumbUrl').classList.add('hidden');
+          document.getElementById('thumbFile').classList.remove('hidden');
+        } else {
+          document.getElementById('thumbUrl').value = tool.thumb;
+        }
+      }
+    }
+  </script>
 </body>
 </html>
