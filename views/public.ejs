@@ -32,11 +32,14 @@
         <div class="tool-card" data-name="<%= tool.name.toLowerCase() %>">
           <img src="<%= tool.thumb %>" alt="<%= tool.name %>" class="thumb" onerror="this.src='/placeholder.png'">
           <div class="card-body">
-            <h3 class="card-title"><%= tool.name %></h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+              <h3 class="card-title" style="margin:0;"><%= tool.name %></h3>
+              <span class="download-count"><i class="fa-solid fa-download"></i> <%= tool.downloads %></span>
+            </div>
             <p class="card-desc"><%= tool.desc %></p>
             <div class="card-actions">
-              <button class="btn download-btn" style="flex:1;" data-link="<%= tool.link %>" data-status="<%= tool.status %>">
-                <%= tool.status === 'updating' ? 'Updating...' : 'Download' %>
+              <button class="btn download-btn" style="flex:1;" data-value="<%= tool.download_value %>" data-status="<%= tool.status %>">
+                <%= tool.status === 'updating' ? 'Under Updating' : 'Download' %>
               </button>
             </div>
           </div>
@@ -57,37 +60,31 @@
     </div>
   </footer>
 
-  <!-- Update Modal -->
   <div id="updateModal" class="modal hidden">
     <div class="modal-content">
       <h3>Tool is Under Updating...</h3>
-      <p>This tool is currently being updated. Please check back later or visit our Discord for ETA.</p>
+      <p>This tool is currently being patched. Please check back later or join our Discord for ETA.</p>
       <button class="btn" onclick="closeModal()">Understood</button>
     </div>
   </div>
 
   <script>
-    // Search
     document.getElementById('searchInput').addEventListener('input', e => {
       const q = e.target.value.toLowerCase();
       document.querySelectorAll('.tool-card').forEach(c => c.style.display = c.dataset.name.includes(q) ? 'flex' : 'none');
     });
 
-    // Download / Modal Logic
     document.querySelectorAll('.download-btn').forEach(btn => {
       btn.addEventListener('click', function() {
-        const status = this.dataset.status;
-        if (status === 'updating') {
+        if (this.dataset.status === 'updating') {
           document.getElementById('updateModal').classList.remove('hidden');
         } else {
-          window.open(this.dataset.link, '_blank');
+          window.open(this.dataset.value, '_blank');
         }
       });
     });
 
-    function closeModal() {
-      document.getElementById('updateModal').classList.add('hidden');
-    }
+    function closeModal() { document.getElementById('updateModal').classList.add('hidden'); }
   </script>
 </body>
 </html>
