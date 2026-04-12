@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WARRIOR FILES</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body style="display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--bg);">
+  <div class="maintenance-box">
+    <div class="pulse-icon">⚠️</div>
+    <h1>Under Maintenance</h1>
+    <p>We are upgrading our servers and improve site bugs and api errors. Please check back shortly.</p>
+    <div class="divider"></div>
+    <p class="text-muted" style="font-size:0.9rem;">Warrior Team</p>
+  </div>
+
+  <style>
+    .maintenance-box { text-align:center; padding:2rem; max-width:500px; animation: fadeIn 0.8s ease; }
+    .pulse-icon { font-size:4rem; margin-bottom:1rem; animation: pulse 2s infinite; }
+    h1 { font-size:2.5rem; margin-bottom:0.5rem; background:linear-gradient(90deg,#fff,var(--primary)); -webkit-background-clip:text; color:transparent; }
+    .divider { width:60px; height:3px; background:var(--primary); margin:1.5rem auto; border-radius:2px; }
+    @keyframes pulse { 0% { transform:scale(1); opacity:1; } 50% { transform:scale(1.1); opacity:0.7; } 100% { transform:scale(1); opacity:1; } }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  </style>
+</body>
+</html>
