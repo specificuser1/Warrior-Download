@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Only Fans</title>
+  <title>Dashboard | <%= site_title %></title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -9,7 +9,8 @@
     <div class="container header-inner">
       <a href="/" class="logo"><%= site_title %></a>
       <div style="display:flex; gap:0.75rem;">
-        <a href="/" class="btn btn-outline">View Site</a>
+        <button class="btn btn-sm" onclick="downloadBackup()">💾 Backup</button>
+        <label class="btn btn-sm btn-outline" style="cursor:pointer;">📥 Import<input type="file" id="importFile" hidden onchange="importData(this)"></label>
         <a href="/logout" class="btn btn-sm">Logout</a>
       </div>
     </div>
@@ -17,268 +18,143 @@
 
   <main class="container admin-container">
     <div class="stats-grid">
-      <div class="stat-card"><h3 id="statTools">0</h3><p>Total Tools</p></div>
-      <div class="stat-card"><h3 id="statDownloads">0</h3><p>Total Downloads</p></div>
-      <div class="stat-card"><h3 id="statVisible">0</h3><p>Visible</p></div>
+      <div class="stat-card"><h3 id="sTools">0</h3><p>Tools</p></div>
+      <div class="stat-card"><h3 id="sVis">0</h3><p>Visible</p></div>
+      <div class="stat-card"><h3 id="sDl">0</h3><p>Downloads</p></div>
+      <div class="stat-card"><h3 id="sDb">0KB</h3><p>DB Size</p></div>
     </div>
 
     <div class="section" style="margin-top:1.5rem;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
-        <h2 class="section-title" id="formTitle" style="margin:0;">Add New Tool</h2>
+        <h2 class="section-title" style="margin:0;">Add / Edit Tool</h2>
         <div style="display:flex; align-items:center; gap:0.75rem; background:var(--bg); padding:0.75rem 1rem; border-radius:8px; border:1px solid var(--border);">
-          <span style="font-weight:500;">Under Maintenance</span>
-          <label class="switch">
-            <input type="checkbox" id="maintenanceToggle" <%= maintenance ? 'checked' : '' %>>
-            <span class="slider round"></span>
-          </label>
+          <span style="font-weight:500;">Maintenance Mode</span>
+          <label class="switch"><input type="checkbox" id="maintToggle" <%= maintenance ? 'checked' : '' %>> <span class="slider round"></span></label>
         </div>
       </div>
 
       <form id="toolForm">
-        <input type="hidden" name="id" id="toolId">
-        <input type="hidden" name="currentThumb" id="currentThumb">
-        <input type="hidden" name="currentDownload" id="currentDownload">
-        <input type="hidden" name="downloadType" id="downloadType">
-
+        <input type="hidden" name="id" id="toolId"><input type="hidden" name="currentThumb" id="currentThumb"><input type="hidden" name="currentDownload" id="currentDownload"><input type="hidden" name="downloadType" id="downloadType">
         <div class="form-grid">
           <input name="name" id="name" class="input" placeholder="Tool Name" required>
           <input name="desc" id="desc" class="input" placeholder="Short Description" required>
-          <select name="status" id="status" class="input" required>
-            <option value="stable">Stable</option>
-            <option value="updating">Updating</option>
-          </select>
-          <div style="display:flex; align-items:center; gap:0.5rem; background:var(--bg); padding:0.75rem; border-radius:8px; border:1px solid var(--border);">            <input type="checkbox" id="visible" name="visible" checked style="width:18px; height:18px; accent-color:var(--primary);">
-            <label for="visible" style="color:var(--text); cursor:pointer;">Show on Public</label>
+          <select name="status" id="status" class="input" required><option value="stable">Stable</option><option value="updating">Updating</option></select>
+          <div style="display:flex; align-items:center; gap:0.5rem; background:var(--bg); padding:0.75rem; border-radius:8px; border:1px solid var(--border);">
+            <input type="checkbox" id="visible" name="visible" checked style="width:18px; height:18px; accent-color:var(--primary);"><label for="visible" style="color:var(--text); cursor:pointer;">Show Public</label>
           </div>
         </div>
-
         <div class="form-group">
           <label class="text-muted">Thumbnail</label>
-          <span class="hint-text">Recommended: 800x600px | WebP/JPG under 200KB</span>
-          <div class="toggle-group">
-            <button type="button" class="toggle-btn active" onclick="toggleSource('thumb','url')">URL</button>
-            <button type="button" class="toggle-btn" onclick="toggleSource('thumb','file')">Upload</button>
-          </div>
-          <input name="thumbUrl" id="thumbUrl" class="input" placeholder="https://...">
-          <input name="thumbFile" id="thumbFile" type="file" accept="image/*" class="input hidden">
-          <p id="currentThumbInfo" class="current-file hidden"></p>
+          <div class="toggle-group"><button type="button" class="toggle-btn active" onclick="toggleSource('thumb','url')">URL</button><button type="button" class="toggle-btn" onclick="toggleSource('thumb','file')">Upload</button></div>
+          <input name="thumbUrl" id="thumbUrl" class="input" placeholder="https://..."><input name="thumbFile" id="thumbFile" type="file" accept="image/*" class="input hidden">
+        </div>        <div class="form-group">
+          <label class="text-muted">Download</label>
+          <div class="toggle-group"><button type="button" class="toggle-btn active" onclick="toggleSource('download','url')">URL</button><button type="button" class="toggle-btn" onclick="toggleSource('download','file')">Upload</button></div>
+          <input name="downloadUrl" id="downloadUrl" class="input" placeholder="https://..."><input name="downloadFile" id="downloadFile" type="file" class="input hidden">
         </div>
-
-        <div class="form-group">
-          <label class="text-muted">Download Source</label>
-          <div class="toggle-group">
-            <button type="button" class="toggle-btn active" onclick="toggleSource('download','url')">URL</button>
-            <button type="button" class="toggle-btn" onclick="toggleSource('download','file')">Upload File</button>
-          </div>
-          <input name="downloadUrl" id="downloadUrl" class="input" placeholder="https://drive.google.com/...">
-          <input name="downloadFile" id="downloadFile" type="file" class="input hidden">
-          <p id="currentDownloadInfo" class="current-file hidden"></p>
-        </div>
-
         <div style="display:flex; gap:0.5rem; margin-top:1rem;">
           <button type="submit" class="btn" id="submitBtn">Add Tool</button>
           <button type="button" class="btn btn-outline hidden" id="cancelBtn" onclick="resetForm()">Cancel</button>
         </div>
-        <div class="progress-container hidden" id="progressContainer">
-          <div class="progress-bar" id="progressBar" style="width: 0%"></div>
-          <span id="progressText" style="font-size:0.85rem; color:var(--text-muted); margin-left:8px;">Uploading: 0%</span>
-        </div>
+        <div class="progress-container hidden" id="progressContainer"><div class="progress-bar" id="progressBar" style="width: 0%"></div><span id="progressText" style="font-size:0.85rem; color:var(--text-muted); margin-left:8px;">Uploading: 0%</span></div>
       </form>
     </div>
 
     <div class="section">
       <h2 class="section-title">Manage Tools</h2>
-      <input type="text" id="adminSearch" class="input" placeholder="Search tools..." style="margin-bottom:1rem;">
+      <div style="display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap;">
+        <input type="text" id="adminSearch" class="input" placeholder="Search tools..." style="flex:1; min-width:200px;">
+        <button class="btn btn-sm btn-outline" onclick="filterTools('all')">All</button>
+        <button class="btn btn-sm btn-outline" onclick="filterTools('stable')">Stable</button>
+        <button class="btn btn-sm btn-outline" onclick="filterTools('updating')">Updating</button>
+        <button class="btn btn-sm btn-outline" onclick="filterTools('hidden')">Hidden</button>
+      </div>
       <div id="toolsList" class="tool-list"></div>
     </div>
 
     <div class="section">
-      <h2 class="section-title">Quick Settings</h2>
-      <form id="settingsForm" class="form-grid">
-        <div><label class="text-muted">Site Title</label><input name="site_title" id="site_title" class="input" value="<%= settings.site_title %>"></div>
-        <div><label class="text-muted">Footer Text</label><input name="footer_text" id="footer_text" class="input" value="<%= settings.footer_text %>"></div>        <div><label class="text-muted">Download Button Label</label><input name="download_label" id="download_label" class="input" value="<%= download_label %>" placeholder="e.g., Downloads, Installs, Views"></div>
-        <div>
-          <label class="text-muted">Custom Logo</label>
-          <input type="file" name="logoFile" id="logoFile" accept="image/*" class="input">
-          <% if (settings.logo) { %><p class="text-muted current-file" style="margin-top:4px;">Current: <img src="<%= settings.logo %>" height="25"></p><% } %>
-        </div>
-        <div style="display:flex; align-items:end;"><button type="submit" class="btn">Save Settings</button></div>
+      <h2 class="section-title">Settings</h2>
+      <form method="POST" action="/admin/settings" enctype="multipart/form-data" class="form-grid" style="margin-bottom:1rem;">
+        <div><label class="text-muted">Site Title</label><input name="site_title" class="input" value="<%= settings.site_title %>"></div>
+        <div><label class="text-muted">Footer</label><input name="footer_text" class="input" value="<%= settings.footer_text %>"></div>
+        <div><label class="text-muted">Logo</label><input type="file" name="logoFile" accept="image/*" class="input"></div>
+        <div style="display:flex; align-items:end;"><button class="btn" type="submit">Save</button></div>
       </form>
-    </div>
-
-    <div class="section">
-      <h2 class="section-title">Social Links</h2>
-      <form id="socialsForm" class="form-grid">
-        <% socials.forEach(s => { %>
-          <div><label class="text-muted"><%= s.platform.charAt(0).toUpperCase() + s.platform.slice(1) %></label>
-          <input name="<%= s.platform %>" class="input" value="<%= s.link %>"></div>
-        <% }) %>
-        <div style="display:flex; align-items:end;"><button type="submit" class="btn">Save Links</button></div>
-      </form>
-    </div>
-
-    <div class="section">
-      <h2 class="section-title">Security</h2>
-      <form method="POST" action="/admin/password" class="form-grid">
-        <input name="oldPass" class="input" type="password" placeholder="Current Password" required>
-        <input name="newPass" class="input" type="password" placeholder="New Password" required>
-        <button class="btn btn-outline" type="submit">Change Password</button>
+      <div class="form-grid"><% socials.forEach(s => { %><form method="POST" action="/admin/socials" style="margin:0;"><input name="<%= s.platform %>" class="input" value="<%= s.link %>"></form><% }) %></div>
+      <form method="POST" action="/admin/password" class="form-grid" style="margin-top:1rem;">
+        <input name="oldPass" class="input" type="password" placeholder="Current Password" required><input name="newPass" class="input" type="password" placeholder="New Password" required><button class="btn btn-outline" type="submit">Change Password</button>
       </form>
     </div>
   </main>
 
   <div id="toast" class="toast hidden"></div>
-
   <script>
-    let toolsData = [], editingId = null;
+    let toolsData = [], editingId = null, currentFilter = 'all';
     const sources = { thumb: 'url', download: 'url' };
 
-    async function loadAdminData() {
-      toolsData = await fetch('/api/admin/tools').then(r => r.json());
+    async function loadSystem() {
+      const sys = await fetch('/api/admin/system').then(r=>r.json());
+      document.getElementById('sTools').textContent = sys.tools;
+      document.getElementById('sVis').textContent = sys.visible;
+      document.getElementById('sDl').textContent = sys.totalDownloads;      document.getElementById('sDb').textContent = `${sys.dbSize}KB`;
+      toolsData = await fetch('/api/admin/tools').then(r=>r.json());
       renderTools();
-      document.getElementById('statTools').textContent = toolsData.length;
-      document.getElementById('statDownloads').textContent = toolsData.reduce((s,t)=>s+(t.downloads||0),0);
-      document.getElementById('statVisible').textContent = toolsData.filter(t=>t.visible==1).length;
     }
 
-    function renderTools(filter='') {
+    function renderTools() {
+      const q = document.getElementById('adminSearch').value.toLowerCase();
       const list = document.getElementById('toolsList');
-      const q = filter.toLowerCase();
-      const filtered = toolsData.filter(t => t.name.toLowerCase().includes(q));
-      list.innerHTML = filtered.length ? filtered.map(t => `        <div class="tool-row">
+      const filtered = toolsData.filter(t => {
+        const matchSearch = t.name.toLowerCase().includes(q);
+        const matchFilter = currentFilter==='all' ? true : currentFilter==='hidden' ? t.visible==0 : t.status===currentFilter;
+        return matchSearch && matchFilter;
+      });
+      list.innerHTML = filtered.length ? filtered.map(t => `
+        <div class="tool-row">
           <div class="tool-info">
             <div style="display:flex; align-items:center; gap:0.5rem;">
               <strong>${t.name}</strong>
               <span class="badge ${t.visible?'visible':'hidden'}">${t.visible?'Visible':'Hidden'}</span>
               <span class="badge ${t.status==='updating'?'updating':'stable'}">${t.status}</span>
             </div>
-            <div class="text-muted" style="font-size:0.85rem;">${t.download_type==='file'?'📦 Local File':'🔗 URL'} | ${t.downloads}⬇️ | ${new Date(t.created_at).toLocaleDateString()}</div>
+            <div class="text-muted" style="font-size:0.85rem;">${t.download_type==='file'?'📦 File':'🔗 URL'} | ${t.downloads}⬇️</div>
           </div>
           <div class="tool-actions">
             <button class="btn btn-sm btn-outline" onclick="editTool(${t.id})">Edit</button>
             <button class="btn btn-sm" style="background:#ef4444;" onclick="deleteTool(${t.id})">Delete</button>
           </div>
         </div>
-      `).join('') : '<p class="text-muted" style="text-align:center; padding:2rem;">No tools found.</p>';
+      `).join('') : '<p class="text-muted" style="text-align:center; padding:2rem;">No tools match.</p>';
     }
 
-    function showToast(msg, type='success') {
-      const t = document.getElementById('toast');
-      t.textContent = msg; t.style.background = type==='success'?'#10b981':'#ef4444';
-      t.classList.remove('hidden');
-      setTimeout(() => t.classList.add('hidden'), 3000);
-    }
-
-    function toggleSource(f, m) {
-      sources[f]=m;
-      document.querySelectorAll(`[onclick^="toggleSource('${f}"]`).forEach(b=>b.classList.remove('active'));
-      event.target.classList.add('active');
-      document.getElementById(`${f}Url`).classList.toggle('hidden', m!=='url');
-      document.getElementById(`${f}File`).classList.toggle('hidden', m!=='file');
-      document.getElementById(`current${f.charAt(0).toUpperCase()+f.slice(1)}Info`).classList.add('hidden');
-    }
-
+    function showToast(m, t='success') { const e=document.getElementById('toast'); e.textContent=m; e.style.background=t==='success'?'#10b981':'#ef4444'; e.classList.remove('hidden'); setTimeout(()=>e.classList.add('hidden'),3000); }
+    function toggleSource(f, m) { sources[f]=m; document.querySelectorAll(`[onclick^="toggleSource('${f}"]`).forEach(b=>b.classList.remove('active')); event.target.classList.add('active'); document.getElementById(`${f}Url`).classList.toggle('hidden', m!=='url'); document.getElementById(`${f}File`).classList.toggle('hidden', m!=='file'); }
+    function filterTools(f) { currentFilter=f; renderTools(); }
+    function resetForm() { document.getElementById('toolForm').reset(); editingId=null; document.getElementById('submitBtn').textContent='Add Tool'; document.getElementById('cancelBtn').classList.add('hidden'); toggleSource('thumb','url'); toggleSource('download','url'); }
     function editTool(id) {
-      const t = toolsData.find(x=>x.id===id);
-      if(!t) return;
+      const t=toolsData.find(x=>x.id===id); if(!t) return;
       editingId=id;
-      document.getElementById('toolId').value=id;
-      document.getElementById('currentThumb').value=t.thumb;
-      document.getElementById('currentDownload').value=t.download_value;
-      document.getElementById('downloadType').value=t.download_type;
-      document.getElementById('name').value=t.name;
-      document.getElementById('desc').value=t.desc;
-      document.getElementById('status').value=t.status;
-      document.getElementById('visible').checked=t.visible==1;
-      
-      if(t.thumb.startsWith('/uploads/')) {
-        toggleSource('thumb','file');
-        document.getElementById('currentThumbInfo').textContent = `Current: ${t.thumb.split('/').pop()}`;
-        document.getElementById('currentThumbInfo').classList.remove('hidden');      } else {
-        toggleSource('thumb','url'); document.getElementById('thumbUrl').value=t.thumb;
-      }
-
-      if(t.download_type==='file') {
-        toggleSource('download','file');
-        document.getElementById('currentDownloadInfo').textContent = `Current: ${t.download_value.split('/').pop()}`;
-        document.getElementById('currentDownloadInfo').classList.remove('hidden');
-      } else {
-        toggleSource('download','url'); document.getElementById('downloadUrl').value=t.download_value;
-      }
-
-      document.getElementById('submitBtn').textContent='Update Tool';
-      document.getElementById('cancelBtn').classList.remove('hidden');
-      window.scrollTo({top:0, behavior:'smooth'});
+      document.getElementById('toolId').value=id; document.getElementById('currentThumb').value=t.thumb; document.getElementById('currentDownload').value=t.download_value; document.getElementById('downloadType').value=t.download_type;
+      document.getElementById('name').value=t.name; document.getElementById('desc').value=t.desc; document.getElementById('status').value=t.status; document.getElementById('visible').checked=t.visible==1;
+      if(t.thumb.startsWith('/uploads/')) toggleSource('thumb','file'); else { toggleSource('thumb','url'); document.getElementById('thumbUrl').value=t.thumb; }
+      if(t.download_type==='file') toggleSource('download','file'); else { toggleSource('download','url'); document.getElementById('downloadUrl').value=t.download_value; }
+      document.getElementById('submitBtn').textContent='Update Tool'; document.getElementById('cancelBtn').classList.remove('hidden'); window.scrollTo({top:0, behavior:'smooth'});
     }
-
-    function resetForm() {
-      document.getElementById('toolForm').reset();
-      editingId=null;
-      document.getElementById('submitBtn').textContent='Add Tool';
-      document.getElementById('cancelBtn').classList.add('hidden');
-      document.getElementById('currentThumbInfo').classList.add('hidden');
-      document.getElementById('currentDownloadInfo').classList.add('hidden');
-      toggleSource('thumb','url'); toggleSource('download','url');
-    }
-
-    async function deleteTool(id) {
-      if(!confirm('Delete permanently?')) return;
-      const res = await fetch('/api/admin/tools/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id})});
-      const data = await res.json();
-      if(data.success){ loadAdminData(); showToast('Deleted.'); } else showToast(data.error,'error');
-    }
+    async function deleteTool(id) { if(!confirm('Delete permanently?')) return; const r=await fetch('/api/admin/tools/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id})}); const d=await r.json(); if(d.success){ loadSystem(); showToast('Deleted.'); } else showToast(d.error,'error'); }
+    async function downloadBackup() { const r=await fetch('/api/admin/backup', {method:'POST'}); const d=await r.json(); if(d.success) { const blob=new Blob([JSON.stringify(d.data, null, 2)], {type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`warrior-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); showToast('Backup downloaded.'); } }
+    async function importData(input) { const file=input.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=async(e)=>{ try { const d=JSON.parse(e.target.result); const r=await fetch('/api/admin/import', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d)}); const res=await r.json(); if(res.success){ loadSystem(); showToast('Imported successfully.'); } else showToast(res.error,'error'); } catch(err){ showToast('Invalid backup file.','error'); } }; reader.readAsText(file); input.value=''; }
 
     document.getElementById('toolForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const btn=document.getElementById('submitBtn'), prog=document.getElementById('progressContainer'), bar=document.getElementById('progressBar'), txt=document.getElementById('progressText');
-      btn.disabled=true; prog.classList.remove('hidden'); bar.style.width='0%'; txt.textContent='Processing: 0%';
-
-      const formData=new FormData(this);
-      const endpoint=editingId?'/api/admin/tools/update':'/api/admin/tools';
+      e.preventDefault();      const btn=document.getElementById('submitBtn'), prog=document.getElementById('progressContainer'), bar=document.getElementById('progressBar'), txt=document.getElementById('progressText');
+      btn.disabled=true; prog.classList.remove('hidden'); bar.style.width='0%'; txt.textContent='Uploading: 0%';
+      const formData=new FormData(this); const endpoint=editingId?'/api/admin/tools/update':'/api/admin/tools';
       const hasFile=document.getElementById('thumbFile').files.length>0||document.getElementById('downloadFile').files.length>0;
-
-      if(hasFile){
-        const xhr=new XMLHttpRequest(); xhr.open('POST', endpoint);
-        xhr.upload.onprogress=(e)=>{ if(e.lengthComputable){const p=Math.round((e.loaded/e.total)*100); bar.style.width=p+'%'; txt.textContent=`Uploading: ${p}%`; }};
-        xhr.onload=()=>{ const r=JSON.parse(xhr.responseText); if(r.success){loadAdminData(); showToast(r.message); resetForm();} else showToast(r.error||'Failed','error'); btn.disabled=false; prog.classList.add('hidden'); };
-        xhr.onerror=()=>{ showToast('Network error','error'); btn.disabled=false; prog.classList.add('hidden'); };
-        xhr.send(formData);
-      } else {        fetch(endpoint,{method:'POST',body:formData}).then(r=>r.json()).then(r=>{ if(r.success){loadAdminData(); showToast(r.message); resetForm();} else showToast(r.error||'Failed','error'); }).catch(()=>showToast('Network error','error')).finally(()=>{ btn.disabled=false; prog.classList.add('hidden'); });
-      }
+      if(hasFile){ const xhr=new XMLHttpRequest(); xhr.open('POST', endpoint); xhr.upload.onprogress=(ev)=>{ if(ev.lengthComputable){const p=Math.round((ev.loaded/ev.total)*100); bar.style.width=p+'%'; txt.textContent=`Uploading: ${p}%`; }}; xhr.onload=()=>{ const r=JSON.parse(xhr.responseText); if(r.success){loadSystem(); showToast(r.message); resetForm();} else showToast(r.error||'Failed','error'); btn.disabled=false; prog.classList.add('hidden'); }; xhr.onerror=()=>{ showToast('Network error','error'); btn.disabled=false; prog.classList.add('hidden'); }; xhr.send(formData); }
+      else { fetch(endpoint,{method:'POST',body:formData}).then(r=>r.json()).then(r=>{ if(r.success){loadSystem(); showToast(r.message); resetForm();} else showToast(r.error||'Failed','error'); }).catch(()=>showToast('Network error','error')).finally(()=>{ btn.disabled=false; prog.classList.add('hidden'); }); }
     });
-
-    document.getElementById('settingsForm').addEventListener('submit', async e=>{
-      e.preventDefault();
-      const btn=e.target.querySelector('button[type="submit"]');
-      btn.disabled=true; btn.textContent='Saving...';
-      try {
-        const res = await fetch('/api/admin/settings', { method:'POST', body: new FormData(e.target) });
-        const data = await res.json();
-        showToast(data.message || 'Saved.', data.success?'success':'error');
-        if(data.success) document.title = `Dashboard | ${document.getElementById('site_title').value}`;
-      } catch { showToast('Network error','error'); }
-      btn.disabled=false; btn.textContent='Save Settings';
-    });
-
-    document.getElementById('socialsForm').addEventListener('submit', async e=>{
-      e.preventDefault();
-      const btn=e.target.querySelector('button[type="submit"]');
-      btn.disabled=true; btn.textContent='Saving...';
-      try {
-        const res = await fetch('/api/admin/socials', { method:'POST', body: new FormData(e.target) });
-        const data = await res.json();
-        showToast(data.message || 'Saved.', data.success?'success':'error');
-      } catch { showToast('Network error','error'); }
-      btn.disabled=false; btn.textContent='Save Links';
-    });
-
-    document.getElementById('adminSearch').addEventListener('input', e=>renderTools(e.target.value));
-    document.getElementById('maintenanceToggle').addEventListener('change', async e=>{
-      const res=await fetch('/api/admin/toggle-maintenance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:e.target.checked})});
-      const data=await res.json(); if(data.success) showToast(`Maintenance ${e.target.checked?'ON':'OFF'}`);
-    });
-
-    loadAdminData();
+    document.getElementById('adminSearch').addEventListener('input', renderTools);
+    document.getElementById('maintToggle').addEventListener('change', async e=>{ const r=await fetch('/api/admin/toggle-maintenance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:e.target.checked})}); const d=await r.json(); if(d.success) showToast(`Maintenance ${e.target.checked?'ON':'OFF'}`); });
+    loadSystem();
   </script>
 </body>
 </html>
