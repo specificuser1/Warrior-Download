@@ -28,7 +28,6 @@ db.exec(`
     CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
 `);
 
-// Safe migrations
 try { db.exec(`ALTER TABLE tools ADD COLUMN visible INTEGER DEFAULT 1;`); } catch(e){}
 try { db.exec(`ALTER TABLE tools ADD COLUMN download_type TEXT DEFAULT 'url';`); } catch(e){}
 try { db.exec(`ALTER TABLE tools ADD COLUMN download_value TEXT DEFAULT '#';`); } catch(e){}
@@ -42,6 +41,7 @@ if (!db.prepare('SELECT id FROM admin').get()) {
     db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run('footer_text', 'Secure Tools. Direct Access. No Compromises.');
     db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run('logo', '');
     db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run('maintenance', '0');
+    db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run('download_label', 'Downloads');
 }
 
 app.set('view engine', 'ejs');
@@ -57,11 +57,9 @@ app.use(session({
 const requireAuth = (req, res, next) => req.session.isAdmin ? next() : res.status(401).json({ error: 'Unauthorized' });
 const getSettings = () => Object.fromEntries(db.prepare('SELECT * FROM settings').all().map(r => [r.key, r.value]));
 
-// Maintenance Middleware
 app.use((req, res, next) => {
     if (!req.path.startsWith('/admin') && !req.path.startsWith('/api') && !req.path.includes('.')) {
-        const s = getSettings();
-        if (s.maintenance === '1') return res.render('maintenance');
+        if (getSettings().maintenance === '1') return res.render('maintenance');
     }
     next();
 });
@@ -87,6 +85,7 @@ app.get('/admin', requireAuth, (req, res) => {
         socials: db.prepare('SELECT * FROM socials').all(),
         settings: s,
         site_title: s.site_title,
+        download_label: s.download_label || 'Downloads',
         maintenance: s.maintenance === '1'
     });
 });
@@ -96,8 +95,8 @@ app.get('/api/admin/tools', requireAuth, (req, res) => res.json(db.prepare('SELE
 
 app.post('/api/admin/tools', requireAuth, upload.fields([{ name: 'thumbFile', maxCount: 1 }, { name: 'downloadFile', maxCount: 1 }]), (req, res) => {
     try {
-        const { name, desc, downloadUrl, status, visible } = req.body;        let thumb = '/placeholder.png', dlType = 'url', dlValue = downloadUrl || '#';
-        if (req.files?.thumbFile?.[0]) thumb = `/uploads/${req.files.thumbFile[0].filename}`;
+        const { name, desc, downloadUrl, status, visible } = req.body;
+        let thumb = '/placeholder.png', dlType = 'url', dlValue = downloadUrl || '#';        if (req.files?.thumbFile?.[0]) thumb = `/uploads/${req.files.thumbFile[0].filename}`;
         if (req.files?.downloadFile?.[0]) { dlType = 'file'; dlValue = `/downloads/${req.files.downloadFile[0].filename}`; }
         db.prepare('INSERT INTO tools (name, desc, thumb, status, visible, download_type, download_value, downloads) VALUES (?, ?, ?, ?, ?, ?, ?, 0)')
           .run(name, desc, thumb, status || 'stable', visible ? 1 : 0, dlType, dlValue);
@@ -135,27 +134,25 @@ app.post('/api/admin/toggle-maintenance', requireAuth, (req, res) => {
     res.json({ success: true, maintenance: enabled });
 });
 
-app.post('/admin/settings', requireAuth, upload.single('logoFile'), (req, res) => {
-    const { site_title, footer_text } = req.body;
-    db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('site_title', site_title);
-    db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('footer_text', footer_text);
-    if (req.file) {
-        const old = getSettings().logo;
-        if (old?.startsWith('/uploads/')) try { fs.unlinkSync(path.join(__dirname, 'public', old)); } catch(e){}
-        db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('logo', `/uploads/${req.file.filename}`);
-    }
-    res.redirect('/admin');
-});app.post('/admin/socials', requireAuth, (req, res) => {
-    Object.entries(req.body).forEach(([k,v]) => db.prepare('INSERT OR REPLACE INTO socials (platform, link) VALUES (?, ?)').run(k,v));
-    res.redirect('/admin');
+app.post('/api/admin/socials', requireAuth, (req, res) => {
+    try {
+        Object.entries(req.body).forEach(([k, v]) => db.prepare('INSERT OR REPLACE INTO socials (platform, link) VALUES (?, ?)').run(k, v));
+        res.json({ success: true, message: 'Social links saved.' });
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
-app.post('/admin/password', requireAuth, (req, res) => {
-    const { oldPass, newPass } = req.body;
-    const admin = db.prepare('SELECT password FROM admin WHERE id = 1').get();
-    if (bcrypt.compareSync(oldPass, admin.password)) {
-        db.prepare('UPDATE admin SET password = ? WHERE id = 1').run(bcrypt.hashSync(newPass, 10));
-    }
-    res.redirect('/admin');
+
+app.post('/api/admin/settings', requireAuth, upload.single('logoFile'), (req, res) => {
+    try {
+        const { site_title, footer_text, download_label } = req.body;
+        db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('site_title', site_title);
+        db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('footer_text', footer_text);        db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('download_label', download_label || 'Downloads');
+        if (req.file) {
+            const old = getSettings().logo;
+            if (old?.startsWith('/uploads/')) try { fs.unlinkSync(path.join(__dirname, 'public', old)); } catch(e){}
+            db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('logo', `/uploads/${req.file.filename}`);
+        }
+        res.json({ success: true, message: 'Settings updated.' });
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.listen(PORT, () => console.log(`🚀 Warrior Download running on port ${PORT}`));
