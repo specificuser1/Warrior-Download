@@ -19,11 +19,11 @@
 
   <main class="container">
     <section class="hero">
-      <h1>Advanced Tools. Direct Access.</h1>
-      <p class="text-muted">Curated, tested, and secure downloads. No redirects. No ads.</p>
+      <h1>PREMIUM TOOLS</h1>
+      <p class="text-muted">SAFETY IS OUR MAIN PRIORITY</p>
       <div class="search-box">
         <i class="fa-solid fa-magnifying-glass search-icon"></i>
-        <input type="text" id="searchInput" class="input" placeholder="Search tools...">
+        <input type="text" id="searchInput" class="input" placeholder="Search...">
       </div>
     </section>
 
@@ -34,12 +34,12 @@
           <div class="card-body">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
               <h3 class="card-title" style="margin:0;"><%= tool.name %></h3>
-              <span class="download-count"><i class="fa-solid fa-circle-arrow-down"></i> <%= tool.downloads %> <%= download_label %></span>
+              <span class="download-count"><i class="fa-solid fa-download"></i> <%= tool.downloads %></span>
             </div>
             <p class="card-desc"><%= tool.desc %></p>
             <div class="card-actions">
               <button class="btn download-btn" style="flex:1;" data-value="<%= tool.download_value %>" data-status="<%= tool.status %>">
-                <%= tool.status === 'updating' ? 'Under Updating' : 'Download' %>
+                <%= tool.status === 'updating' ? 'Under Updating...' : 'Download' %>
               </button>
             </div>
           </div>
@@ -56,14 +56,14 @@
         <% }) %>
       </div>
       <p class="copyright"><%= footer_text %></p>
-      <p class="copyright">Developed by SUBHAN | &copy; 2026 <%= site_title %></p>
+      <p class="copyright">DEVPLOVED BY SUBHAN | &copy; 2018-26</p>
     </div>
   </footer>
 
   <div id="updateModal" class="modal hidden">
     <div class="modal-content">
       <h3>Tool is Under Updating...</h3>
-      <p>This tool is currently being patched. Please check back later or join our Discord for ETA.</p>
+      <p>This tool is currently updating new version. Please check back later or join our Warrior Team Discord for ETA.</p>
       <button class="btn" onclick="closeModal()">Understood</button>
     </div>
   </div>
@@ -71,7 +71,7 @@
   <script>
     document.getElementById('searchInput').addEventListener('input', e => {
       const q = e.target.value.toLowerCase();
-      document.querySelectorAll('.tool-card').forEach(c => c.style.display = c.dataset.name.includes(q) ? 'flex' : 'none';
+      document.querySelectorAll('.tool-card').forEach(c => c.style.display = c.dataset.name.includes(q) ? 'flex' : 'none');
     });
 
     document.querySelectorAll('.download-btn').forEach(btn => {
